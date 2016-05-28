@@ -1,0 +1,25 @@
+#!/usr/bin/python
+import sys
+import os
+import subprocess
+
+'''
+mpirun -n 1 coreneuron_exec -mpi -d coredat -e 100 --cell_permute=2 --nwarp=10 --voltage=1000 --gpu
+'''
+cwd = os.getcwd()
+
+builddir = '%s/buildgpu' % cwd
+corenrn = '%s/bin/coreneuron_exec' % builddir
+outdatdir = '%s/1' % cwd
+
+args = '-mpi -d coredat -e 100 --cell_permute=2 --nwarp=200 --voltage=1000 --gpu'
+
+cmd = 'mkdir -p %s' % outdatdir
+if subprocess.call(cmd , shell = True) != 0:
+  print "could not %s" % cmd
+  sys.exit(1)
+
+launch = '( mpirun -n 1 %s %s ) >& %s/stdout' % (corenrn, args, outdatdir)
+print launch
+
+subprocess.call(launch, shell = True)

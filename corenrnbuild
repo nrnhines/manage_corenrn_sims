@@ -1,0 +1,46 @@
+#!/usr/bin/python
+import sys
+import os
+import subprocess
+
+'''
+cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modcore
+  -DCMAKE_INSTALL_PREFIX=/gpfs/bbp.cscs.ch/home/hines/bbgpu/install_viz
+  -DCMAKE_C_FLAGS:STRING="-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10
+    -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP -DADDITIONAL_MECHS"
+  -DCMAKE_CXX_FLAGS:STRING="-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10
+    -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP -DADDITIONAL_MECHS"
+  -DCOMPILE_LIBRARY_TYPE=STATIC
+  -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON
+'''
+cwd = os.getcwd()
+
+corenrndir = '$HOME/bbgpu/coreneuron'
+builddir = '%s/buildgpu' % cwd
+moddir = '%s/modcore' % cwd
+
+cmd = 'mkdir -p %s' % builddir
+if subprocess.call(cmd , shell = True) != 0:
+  print "could not %s" % cmd
+  sys.exit(1)
+
+installdir = '$HOME/bbgpu/install_viz'
+pgflags = '-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10'
+optflags = '-O3'
+layout = '-DLAYOUT=0'
+pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
+profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON'
+extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC'
+
+cflags = '-DCMAKE_C_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
+cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
+
+addmechpath = '-DADDITIONAL_MECHPATH=' + moddir
+cmakeinstall = '-DCMAKE_INSTALL_PREFIX=' + installdir
+
+cmake = 'cmake %s %s %s %s %s %s %s' % (corenrndir, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
+
+build = '( cd %s ; %s ; make -j 6 )' % (builddir, cmake)
+print build
+
+subprocess.call(build, shell = True)
