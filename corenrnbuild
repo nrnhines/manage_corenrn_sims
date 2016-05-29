@@ -41,6 +41,10 @@ cmakeinstall = '-DCMAKE_INSTALL_PREFIX=' + installdir
 cmake = 'cmake %s %s %s %s %s %s %s' % (corenrndir, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
 
 build = '( cd %s ; %s ; make -j 6 )' % (builddir, cmake)
+
 print build
+f = open(builddir + "/buildcmd", "w")
+f.write(build + '\n\n')
+f.close
 
 subprocess.call(build, shell = True)
