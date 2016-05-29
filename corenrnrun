@@ -30,9 +30,15 @@ if subprocess.call(cmd , shell = True) != 0:
   print "could not %s" % cmd
   sys.exit(1)
 
+pid = os.getpid()
+stdoutfile = '%s/stdout%d' % (outdatdir, pid)
+
 launch = 'mpirun -n 1 %s %s %s' % (profile, corenrn, cnargs)
 print launch
 launch_info = "cat %s/buildcmd ; echo '%s'" % (builddir, launch)
 
-cmd = '( %s ; %s ) >& %s/stdout$$' % (launch_info, launch, outdatdir)
+
+cmd = '( %s ; %s ; echo '' ) >& %s' % (launch_info, launch, stdoutfile)
 subprocess.call(cmd, shell = True)
+
+subprocess.call('grep "Solver Time" %s' % stdoutfile, shell = True);
