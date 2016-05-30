@@ -5,6 +5,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-p", action='store_true', help="profile using 'nvprof --profile-from-start off'", default=False)
 parser.add_argument("-b", metavar='builddir', help="folder containing bin/coreneuron_exec (default buildgpu)", default="buildgpu")
 parser.add_argument("-o", metavar='outdir', help='where to put output (default "1")', default="1")
+parser.add_argument("-m", metavar='"metrics"', help='comma separated list (without a value: "sm_efficiency,achieved_occupancy,sm_efficiency_instance")', nargs='?', const="")
+parser.add_argument("-k", metavar='"kernels"', help='| separated list (without arg then: "solve")', nargs='?', const="")
 parser.add_argument("-cnargs", metavar='"required"', help="all args for coreneuron_exec (but not -mpi or --gpu)", required=True)
 args = parser.parse_args()
 
@@ -17,7 +19,16 @@ mpirun -n 1 coreneuron_exec -mpi -d coredat -e 100 --cell_permute=2 --nwarp=10 -
 '''
 cwd = os.getcwd()
 
-profile = 'nvprof --profile-from-start off' if args.p else ''
+profile = '--profile-from-start off' if args.p else ""
+
+metrics = '"sm_efficiency,achieved_occupancy,sm_efficiency_instance"' if args.m == "" else '"%s"' % args.m
+metrics = '--metrics %s' % metrics if args.m != None else ""
+
+kernels = '"::solve:"' if args.k == "" else '"::%s:"' % args.k
+kernels = '--kernels %s' % kernels if args.k != None else ""
+
+if args.p or args.m != None or args.k != None:
+  profile = 'nvprof %s %s %s' % (profile, kernels, metrics)
 
 builddir = '%s/%s' % (cwd, args.b)
 corenrn = '%s/bin/coreneuron_exec' % builddir
