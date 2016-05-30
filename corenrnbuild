@@ -1,4 +1,11 @@
 #!/usr/bin/python
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", metavar='moddir', help='folder containing modfiles (relative to cwd unless begins with /) (default ".")', default='.')
+parser.add_argument("-b", metavar='builddir', help='will contain bin/coreneuron_exec (relative to cwd unless begins with /) (default "buildgpu")', default='buildgpu')
+args = parser.parse_args()
+
 import sys
 import os
 import subprocess
@@ -16,8 +23,8 @@ cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modc
 cwd = os.getcwd()
 
 corenrndir = '$HOME/bbgpu/coreneuron'
-builddir = '%s/buildgpu' % cwd
-moddir = '%s/modcore' % cwd
+builddir = '%s/%s' % (cwd, args.b) if args.b[0:1] != "/" else args.b
+moddir = '%s/%s' % (cwd, args.m) if args.m[0:1] != "/" else args.m
 
 cmd = 'mkdir -p %s' % builddir
 if subprocess.call(cmd , shell = True) != 0:
