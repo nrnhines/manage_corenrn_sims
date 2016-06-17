@@ -4,6 +4,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", metavar='moddir', help='folder containing modfiles (relative to cwd unless begins with /) (default ".")', default='.')
 parser.add_argument("-b", metavar='builddir', help='will contain bin/coreneuron_exec (relative to cwd unless begins with /) (default "buildgpu")', default='buildgpu')
+parser.add_argument("-nopg", action='store_true', help='PG compiler not available', default=False)
 args = parser.parse_args()
 
 import sys
@@ -39,7 +40,11 @@ pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
 profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
 
-cflags = '-DCMAKE_C_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
+if args.nopg:
+  pgflags = ''
+  profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
+
+cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
 cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
 
 addmechpath = '-DADDITIONAL_MECHPATH=' + moddir
