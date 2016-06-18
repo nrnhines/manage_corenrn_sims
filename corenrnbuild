@@ -4,6 +4,9 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", metavar='moddir', help='folder containing modfiles (relative to cwd unless begins with /) (default ".")', default='.')
 parser.add_argument("-b", metavar='builddir', help='will contain bin/coreneuron_exec (relative to cwd unless begins with /) (default "buildgpu")', default='buildgpu')
+parser.add_argument("-s", metavar='srcdir', help='top level source folder (default "$HOME/bbgpu/coreneuron")', default='$HOME/bbgpu/coreneuron')
+parser.add_argument("-i", metavar='dir', help='install dir for mod2c(default "$HOME/bbgpu/install_viz")', default='$HOME/bbgpu/install_viz')
+parser.add_argument("-aos", action='store_true', help='AoS layout (otherwise, SoA)', default=False)
 parser.add_argument("-nopg", action='store_true', help='PG compiler not available', default=False)
 args = parser.parse_args()
 
@@ -23,7 +26,7 @@ cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modc
 '''
 cwd = os.getcwd()
 
-corenrndir = '$HOME/bbgpu/coreneuron'
+corenrndir = args.s
 builddir = '%s/%s' % (cwd, args.b) if args.b[0:1] != "/" else args.b
 moddir = '%s/%s' % (cwd, args.m) if args.m[0:1] != "/" else args.m
 
@@ -32,10 +35,9 @@ if subprocess.call(cmd , shell = True) != 0:
   print "could not %s" % cmd
   sys.exit(1)
 
-installdir = '$HOME/bbgpu/install_viz'
+installdir = args.i
 pgflags = '-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10'
 optflags = '-O3'
-layout = '-DLAYOUT=0'
 pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
 profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
@@ -43,6 +45,9 @@ extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
 if args.nopg:
   pgflags = ''
   profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
+
+layout='-DLAYOUT=1' if args.aos else '-DLAYOUT=0'
+
 
 cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
 cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
