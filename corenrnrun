@@ -45,11 +45,10 @@ pid = os.getpid()
 stdoutfile = '%s/stdout%d' % (outdatdir, pid)
 
 launch = 'mpirun -n 1 %s %s %s' % (profile, corenrn, cnargs)
-print launch
 launch_info = "cat %s/buildcmd ; echo '%s'" % (builddir, launch)
 
-
-cmd = '( %s ; %s ; echo '' ) >& %s' % (launch_info, launch, stdoutfile)
+cmd = '( %s ; %s ; echo "" ) > %s 2>&1' % (launch_info, launch, stdoutfile)
+print "\n", cmd, "\n"
 subprocess.call(cmd, shell = True)
 
 subprocess.call('grep "Solver Time" %s' % stdoutfile, shell = True);
