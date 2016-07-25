@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015'
+pgdir='/opt/pgi/linux86-64/2016'
+
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", metavar='moddir', help='folder containing modfiles (relative to cwd unless begins with /) (default ".")', default='.')
@@ -8,6 +11,7 @@ parser.add_argument("-s", metavar='srcdir', help='top level source folder (defau
 parser.add_argument("-i", metavar='dir', help='install dir for mod2c(default "$HOME/bbgpu/install_viz")', default='$HOME/bbgpu/install_viz')
 parser.add_argument("-aos", action='store_true', help='AoS layout (otherwise, SoA)', default=False)
 parser.add_argument("-nopg", action='store_true', help='PG compiler not available', default=False)
+parser.add_argument("-cflags", metavar='cflags', help='extra space separated flags without the -, e.g. DNRN_PRCELLSTATE=1', default=None)
 args = parser.parse_args()
 
 import sys
@@ -15,6 +19,7 @@ import os
 import subprocess
 
 '''
+original example
 cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modcore
   -DCMAKE_INSTALL_PREFIX=/gpfs/bbp.cscs.ch/home/hines/bbgpu/install_viz
   -DCMAKE_C_FLAGS:STRING="-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10
@@ -29,6 +34,8 @@ cwd = os.getcwd()
 corenrndir = args.s
 builddir = '%s/%s' % (cwd, args.b) if args.b[0:1] != "/" else args.b
 moddir = '%s/%s' % (cwd, args.m) if args.m[0:1] != "/" else args.m
+#prepend '-' and replace all ' ' with ' -'
+xtflags = ('-' + ' -'.join(args.cflags.split())) if args.cflags else ''
 
 cmd = 'mkdir -p %s' % builddir
 if subprocess.call(cmd , shell = True) != 0:
@@ -36,28 +43,36 @@ if subprocess.call(cmd , shell = True) != 0:
   sys.exit(1)
 
 installdir = args.i
-pgflags = '-I/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015/include -acc -Minfo=acc -Minline=size:200,levels:10'
+pgflags = '-I%s/include -acc -Minfo=acc -Minline=size:200,levels:10' % pgdir
 optflags = '-O3'
 pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
-profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON'
+profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=OFF'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
 
+expCC=''
+expCXX=''
 if args.nopg:
   pgflags = ''
   profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
+else:
+  expCC='export CC=%s/bin/pgcc' % pgdir
+  expCXX='export CXX=%s/bin/pgc++' % pgdir
 
 layout='-DLAYOUT=1' if args.aos else '-DLAYOUT=0'
 
 
-cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
-cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, optflags)
+cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s %s"' % (pgflags, pgflags2, layout, optflags, xtflags)
+cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s %s"' % (pgflags, pgflags2, layout, optflags, xtflags)
 
 addmechpath = '-DADDITIONAL_MECHPATH=' + moddir
 cmakeinstall = '-DCMAKE_INSTALL_PREFIX=' + installdir
 
 cmake = 'cmake %s %s %s %s %s %s %s' % (corenrndir, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
 
-build = '( cd %s ; %s ; make -j 6 )' % (builddir, cmake)
+build = '''( cd %s
+  %s
+  %s
+  %s ; make -j 6 )''' % (builddir, expCC, expCXX, cmake)
 
 print build
 f = open(builddir + "/buildcmd", "w")
