@@ -13,7 +13,7 @@ parser.add_argument("-aos", action='store_true', help='AoS layout (otherwise, So
 parser.add_argument("-nopg", action='store_true', help='PG compiler not available', default=False)
 parser.add_argument("-cflags", metavar='cflags', help='extra space separated flags without the -, e.g. DNRN_PRCELLSTATE=1', default=None)
 parser.add_argument("-ieee", action='store_true', help='consistent with IEEE floating point', default=False)
-parser.add_argument("-O", metavar='optlevel', help='optimization level (default 3)', default=3)
+parser.add_argument("-O", metavar='optlevel', help='optimization level (default 3)', default="3")
 args = parser.parse_args()
 
 import sys
