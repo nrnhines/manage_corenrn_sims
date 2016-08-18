@@ -13,7 +13,7 @@ parser.add_argument("-aos", action='store_true', help='AoS layout (otherwise, So
 parser.add_argument("-nopg", action='store_true', help='PG compiler not available', default=False)
 parser.add_argument("-cflags", metavar='cflags', help='extra space separated flags without the -, e.g. DNRN_PRCELLSTATE=1', default=None)
 parser.add_argument("-ieee", action='store_true', help='consistent with IEEE floating point', default=False)
-parser.add_argument("-O", metavar='optlevel', help='optimization level (default 3)', default="3")
+parser.add_argument("-debug", action='store_true', help='nothing optimized out', default=False)
 args = parser.parse_args()
 
 import sys
@@ -33,6 +33,7 @@ cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modc
 '''
 cwd = os.getcwd()
 
+cmakedebug = '-DCMAKE_BUILD_TYPE=DEBUG' if args.debug else ''
 corenrndir = args.s
 builddir = '%s/%s' % (cwd, args.b) if args.b[0:1] != "/" else args.b
 moddir = '%s/%s' % (cwd, args.m) if args.m[0:1] != "/" else args.m
@@ -48,7 +49,6 @@ ieee = '-Mnofma -Kieee -ta=tesla:nofma,noflushz' if args.ieee else ""
 
 installdir = args.i
 pgflags = '-I%s/include -acc -Minfo=acc -Minline=size:200,levels:10 %s' % (pgdir,ieee)
-optflags = '-O'+args.O
 pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
 profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=OFF'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
@@ -65,13 +65,13 @@ else:
 layout='-DLAYOUT=1' if args.aos else '-DLAYOUT=0'
 
 
-cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s %s"' % (pgflags, pgflags2, layout, optflags, xtflags)
-cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s %s"' % (pgflags, pgflags2, layout, optflags, xtflags)
+cflags = '-DCMAKE_C_FLAGS:STRING="-DCORENEURON_BUILD=1 %s %s %s %s"' % (pgflags, pgflags2, layout, xtflags)
+cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout, xtflags)
 
 addmechpath = '-DADDITIONAL_MECHPATH=' + moddir
 cmakeinstall = '-DCMAKE_INSTALL_PREFIX=' + installdir
 
-cmake = 'cmake %s %s %s %s %s %s %s' % (corenrndir, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
+cmake = 'cmake %s %s %s %s %s %s %s %s' % (corenrndir, cmakedebug, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
 
 build = '''( cd %s
   %s
