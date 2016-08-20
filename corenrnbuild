@@ -55,12 +55,14 @@ extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
 
 expCC=''
 expCXX=''
+enable_openacc=''
 if args.nopg:
   pgflags = ''
   profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
 else:
   expCC='export CC=%s/bin/pgcc' % pgdir
   expCXX='export CXX=%s/bin/pgc++' % pgdir
+  enable_openacc='-DENABLE_OPENACC=ON'
 
 layout='-DLAYOUT=1' if args.aos else '-DLAYOUT=0'
 
@@ -71,7 +73,7 @@ cxxflags = '-DCMAKE_CXX_FLAGS:STRING="%s %s %s %s"' % (pgflags, pgflags2, layout
 addmechpath = '-DADDITIONAL_MECHPATH=' + moddir
 cmakeinstall = '-DCMAKE_INSTALL_PREFIX=' + installdir
 
-cmake = 'cmake %s %s %s %s %s %s %s %s' % (corenrndir, cmakedebug, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
+cmake = 'cmake %s %s %s %s %s %s %s %s %s' % (enable_openacc, corenrndir, cmakedebug, cmakeinstall, addmechpath, cflags, cxxflags, extra1, profile)
 
 build = '''( cd %s
   %s
