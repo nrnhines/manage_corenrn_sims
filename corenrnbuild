@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/15.10/linux86-64/2015'
+pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/16.5/linux86-64/2016'
 pgdir='/opt/pgi/linux86-64/2016'
 
 import argparse
