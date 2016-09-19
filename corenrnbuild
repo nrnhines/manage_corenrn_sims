@@ -1,7 +1,15 @@
 #!/usr/bin/python
 
+#the prerequisite for the -bluewaters arg is
+'''
+module swap PrgEnv-cray PrgEnv-pgi
+module load cmake/3.1.3
+module load cudatoolkit
+'''
+
 pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/16.5/linux86-64/2016'
 pgdir='/opt/pgi/linux86-64/2016'
+pgdir2 = pgdir
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -14,6 +22,7 @@ parser.add_argument("-nopg", action='store_true', help='PG compiler not availabl
 parser.add_argument("-cflags", metavar='cflags', help='extra space separated flags without the -, e.g. DNRN_PRCELLSTATE=1', default=None)
 parser.add_argument("-ieee", action='store_true', help='consistent with IEEE floating point', default=False)
 parser.add_argument("-debug", action='store_true', help='nothing optimized out', default=False)
+parser.add_argument("-bluewaters", action='store_true', help='Cray build on NCSA Blue Waters', default=False)
 args = parser.parse_args()
 
 import sys
@@ -33,6 +42,10 @@ cmake .. -DADDITIONAL_MECHPATH=/gpfs/bbp.cscs.ch/home/hines/models/nrntraub/modc
 '''
 cwd = os.getcwd()
 
+if args.bluewaters:
+  pgdir='/opt/pgi/16.3.0/linux86-64/16.3'
+  pgdir2='/opt/pgi/15.7.0/linux86-64/15.7'
+
 cmakedebug = '-DCMAKE_BUILD_TYPE=DEBUG' if args.debug else ''
 corenrndir = args.s
 builddir = '%s/%s' % (cwd, args.b) if args.b[0:1] != "/" else args.b
@@ -47,8 +60,10 @@ if subprocess.call(cmd , shell = True) != 0:
 
 ieee = '-Mnofma -Kieee -ta=tesla:nofma,noflushz' if args.ieee else ""
 
+mc = '-ta=tesla:cuda7.5'
+
 installdir = args.i
-pgflags = '-I%s/include -acc -Minfo=acc -Minline=size:200,levels:10 %s' % (pgdir,ieee)
+pgflags = '-I%s/include -acc %s -Minfo=acc -Minline=size:200,levels:10 %s' % (pgdir2,mc,ieee)
 pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
 profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=OFF'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
@@ -59,6 +74,9 @@ enable_openacc=''
 if args.nopg:
   pgflags = ''
   profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
+elif args.bluewaters:
+  expCC='export CC=cc'
+  expCXX='export CXX=CC'
 else:
   expCC='export CC=%s/bin/pgcc' % pgdir
   expCXX='export CXX=%s/bin/pgc++' % pgdir
