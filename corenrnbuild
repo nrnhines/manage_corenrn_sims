@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/16.5/linux86-64/2016'
-pgdir='/opt/pgi/linux86-64/2016'
+pgdir='/opt/pgi/linux86-64/16.9'
+#pgdir='/opt/pgi/linux86-64/2016'
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -47,8 +48,10 @@ if subprocess.call(cmd , shell = True) != 0:
 
 ieee = '-Mnofma -Kieee -ta=tesla:nofma,noflushz' if args.ieee else ""
 
+mc='-ta=tesla:cuda7.5'
+
 installdir = args.i
-pgflags = '-I%s/include -acc -Minfo=acc -Minline=size:200,levels:10 %s' % (pgdir,ieee)
+pgflags = '-I%s/include -acc -Minfo=acc %s -Minline=size:200,levels:10 %s' % (pgdir, mc, ieee)
 pgflags2 = '-DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP -DADDITIONAL_MECHS'
 profile = '-DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=OFF'
 extra1 = '-DCOMPILE_LIBRARY_TYPE=STATIC -DDISABLE_NRN_TIMEOUT=ON'
