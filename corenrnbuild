@@ -9,7 +9,7 @@ module load cudatoolkit
 
 pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/16.5/linux86-64/2016'
 pgdir='/opt/pgi/linux86-64/16.9'
-#pgdir='/opt/pgi/linux86-64/2016'
+pgdir='/opt/pgi/linux86-64/2016'
 
 pgdir2 = pgdir
 
@@ -98,7 +98,7 @@ cmake = 'cmake %s %s %s %s %s %s %s %s %s' % (enable_openacc, corenrndir, cmaked
 build = '''( cd %s
   %s
   %s
-  %s ; make -j 6 )''' % (builddir, expCC, expCXX, cmake)
+  %s ; make formatbuild ; make -j 6 )''' % (builddir, expCC, expCXX, cmake)
 
 print build
 f = open(builddir + "/buildcmd", "w")
