@@ -5,6 +5,12 @@
 module swap PrgEnv-cray PrgEnv-pgi
 module load cmake/3.1.3
 module load cudatoolkit
+module load craype-accel-nvidia35
+
+#for profiling
+module unload darshan
+module load perftools-base
+module load perftools-lite-gpu
 '''
 
 pgdir='/gpfs/bbp.cscs.ch/apps/viz/tools/pgi/16.5/linux86-64/2016'
@@ -76,13 +82,15 @@ enable_openacc=''
 if args.nopg:
   pgflags = ''
   profile = '-DENABLE_SELECTIVE_GPU_PROFILING=OFF'
-elif args.bluewaters:
-  expCC='export CC=cc'
-  expCXX='export CXX=CC'
 else:
   expCC='export CC=%s/bin/pgcc' % pgdir
   expCXX='export CXX=%s/bin/pgc++' % pgdir
   enable_openacc='-DENABLE_OPENACC=ON'
+
+if args.bluewaters:
+  expCC='export CC=cc'
+  expCXX='export CXX=CC'
+  pgflags = ' %s -I%s/include' % (pgflags, pgdir2)
 
 layout='-DLAYOUT=1' if args.aos else '-DLAYOUT=0'
 
@@ -98,7 +106,7 @@ cmake = 'cmake %s %s %s %s %s %s %s %s %s' % (enable_openacc, corenrndir, cmaked
 build = '''( cd %s
   %s
   %s
-  %s ; make formatbuild ; make -j 6 )''' % (builddir, expCC, expCXX, cmake)
+  %s ; make formatbuild ; make -j 6 VERBOSE=1)''' % (builddir, expCC, expCXX, cmake)
 
 print build
 f = open(builddir + "/buildcmd", "w")
